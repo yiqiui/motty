@@ -742,10 +742,19 @@ func (state *State) declareWorkspaceTab(f *flex.Frame, workspace layoutcore.Work
 	entry.label = label
 	entry.output = state.workspaceOutputAlert(workspace.ID)
 	tabOptions := ui.HitOptions{Role: ui.RoleTab, Selected: active}
+	// A tab whose label is too long to fit shows its full name as a tooltip on
+	// hover (issue #352): a deep path or a long host label among many tabs stays
+	// readable. The shared hover tooltip paints Hit, so naming it here is enough.
+	// Tabs whose label already fits leave Hint empty, so an unlocked tab is
+	// announced once through its name (RoleTab), not twice; only a locked tab
+	// uses Hint to announce its protection (see TestLockedTabAnnouncesItsProtection).
+	if state.tabLabelFits(f.Canvas(), workspace, label, width, compact) {
+		tabOptions.Hint = ""
+	} else {
+		tabOptions.Hint = label
+	}
 	if workspace.Locked {
 		tabOptions.Hint = m.TabLockedHint
-	} else if vertical {
-		tabOptions.Hint = label
 	}
 	// A desktop keeps its size and protection in the status line under the
 	// picture, which the host may have hidden: the tab says it on hover instead.

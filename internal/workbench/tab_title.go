@@ -3,6 +3,7 @@ package workbench
 import (
 	"strings"
 
+	"github.com/vivaui/viva/ui"
 	layoutcore "motty/internal/workspace"
 )
 
@@ -36,4 +37,30 @@ func (state *State) tabSession(workspace layoutcore.WorkspaceInfo) *Session {
 	}
 	session, _ := state.sessionByIDPointer(uint32(pane.SessionID))
 	return session
+}
+
+// tabLabelFits reports whether label fits the tab's text area at the size and
+// weight the tab draws its title. declareWorkspaceTab reserves the same fixed
+// chrome a painted tab occupies — the badge, host light and close button plus
+// their margins and the row's inner padding — and lets the label take what
+// remains, exactly as the visible title does, so the prediction matches what
+// the eye sees (issue #352).
+func (state *State) tabLabelFits(canvas *ui.Canvas, workspace layoutcore.WorkspaceInfo, label string, width float32, compact bool) bool {
+	const (
+		padLeft  = 4
+		badge    = 20 + 7
+		light    = 9 + 7
+		close    = 20 + 7
+		reserve  = padLeft + badge + light + close
+	)
+	// A compact tab shows only a host-color square and no label, so it neither
+	// elides nor needs a hover hint.
+	if compact {
+		return true
+	}
+	avail := width - reserve
+	if avail <= 0 {
+		return false
+	}
+	return canvas.TextWidthWeight(label, metrics.FontSizeS, ui.WeightMedium) <= avail
 }
